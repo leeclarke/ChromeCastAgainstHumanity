@@ -4,3 +4,7 @@
 *.jar
 *.war
 *.ear
+/bin
+.DS_Store
+.classpath
+.project

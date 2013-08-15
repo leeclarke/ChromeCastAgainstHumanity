@@ -1,0 +1,45 @@
+{
+    "gameId": 1,
+    "bossUser": "UserNameOfCastHost",
+    "gameState": "PLAY|REVIEW",
+    "blackCardInPlay": {
+        "content": "Thats right I killed _____.  How, you ask? ____",
+        "type": "B",
+        "pickCt": 2,
+        "draw": 1
+    },
+    "users": [
+        {
+            "name": "tester",
+            "awesomePoints": 0,
+            "imCzar": false,
+            "state": "ACTIVE|DROPED",
+            "cards": [
+                {
+                    "content": "Darth Vader.",
+                    "type": "W"
+                },
+                {
+                    "content": "Women.",
+                    "type": "W"
+                },
+                {
+                    "content": "World of Warcraft..",
+                    "type": "W"
+                }
+            ],
+            "submitCards": [
+                {
+                    "content": "Laying an egg",
+                    "type": "W",
+                    "submitOrder": 2
+                },
+                {
+                    "content": "Active Listening.",
+                    "type": "W",
+                    "submitOrder": 1
+                }
+            ]
+        }
+    ]
+}
