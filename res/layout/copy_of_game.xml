@@ -32,41 +32,12 @@
     
 </LinearLayout>
     
-<LinearLayout 
-    android:id="@+id/cardLayout"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:layout_weight="90"
-    android:orientation="vertical"
-    android:background="@drawable/lib_bg" >
-        <ImageView
-            android:id="@+id/imageStar"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:src="@drawable/star" 
-	        android:visibility="invisible"
-            android:contentDescription="@string/star_selected"/>
-        
-        <TextView
-	        android:id="@+id/cardView"
-	        android:layout_width="fill_parent"
-	        android:layout_height="0dp"
-	        android:layout_weight="90"
-	        android:text="@string/card_dir"	        
-	        android:textStyle="bold"
-	        android:textAppearance="?android:attr/textAppearanceLarge" />
-        
-        <TextView 
-            android:id="@+id/cardPick"
-            android:textAlignment="viewEnd"
-            android:text="@string/cardPickDefault"
-            android:layout_width="fill_parent"
-            android:textStyle="bold" 
-            android:layout_height="40dp"
-            android:gravity="right"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
- </LinearLayout>
-              
+    	<android.support.v4.view.ViewPager
+	    xmlns:android="http://schemas.android.com/apk/res/android"
+	    android:id="@+id/pager"
+	    android:layout_width="match_parent"
+	    android:layout_height="match_parent" />
+
 
     
     <LinearLayout

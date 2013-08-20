@@ -22,5 +22,17 @@
     <string name="game_content_holder">Game Content Goes Here!</string>
     <string name="title_card_list">Cards</string>
     <string name="title_card_detail">Card Detail</string>
+    <string name="message_text">This is where the messages section should go.</string>
+    <string name="bypasstest">Test Game Screen</string>
+    <string name="your_awesome_points">Your Awesome Points:</string>
+    <string name="back">&lt;</string>
+    <string name="next_card">></string>
+    <string name="submit_card">Submit</string>
+    <string name="get_cards">Get Cards</string>
+    <string name="btn_content_next">Next</string>
+    <string name="btn_content_back">Back</string>
+    <string name="card_dir">Tap the Get Cards button to get your hand.</string>
+    <string name="cardPickDefault">pick: 1</string>
+    <string name="star_selected">Star - Selected</string>
 
 </resources>

@@ -14,7 +14,10 @@ import com.google.cast.CastDevice;
 
 //TODO: 
 /*
- * 
+ * Add ability to test with out CC connection. Fake it for test mode.
+ * Add a few tests for get/send messages.
+ * Need to finish Cards interface for the Client.
+ * Add Dialogue for getting User Name.
  * */
 /**
  * The fun starts here! Getting a connection to a ChromeCast is the primary objective here, after that Start the GameActivity.
@@ -61,7 +64,7 @@ public class MainActivity extends Activity {
         findViewById(R.id.start).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                startGame(true);
+                startGame();
             }
         });
 
@@ -74,9 +77,9 @@ public class MainActivity extends Activity {
     }
     
     /** 
-     * Starts the GameActivity that handles the TicTacToe game. startWithPlayer1 is not used. 
+     * Starts the GameActivity that handles the TicTacToe game. 
      */
-    private void startGame(boolean startWithPlayer1) {
+    private void startGame() {
         Intent i = new Intent(this, GameActivity.class);
         startActivity(i);
     }
@@ -98,8 +101,7 @@ public class MainActivity extends Activity {
                     CastCAHApplication.getInstance().setDevice(device);
                     findViewById(R.id.start).setEnabled(true);
                 } else {
-                    setConnectedDeviceTextView(
-                            MainActivity.this.getResources().getString(R.string.no_device));
+                    setConnectedDeviceTextView(MainActivity.this.getResources().getString(R.string.no_device));
                     findViewById(R.id.start).setEnabled(false);
                 }
             }

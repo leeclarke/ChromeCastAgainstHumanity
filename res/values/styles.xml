@@ -19,4 +19,8 @@
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
     </style>
 
+    <style name="buttonBarButtonCah" parent="android:attr/buttonBarButtonStyle">
+        
+    </style>
+    
 </resources>

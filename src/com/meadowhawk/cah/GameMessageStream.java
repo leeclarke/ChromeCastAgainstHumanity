@@ -17,6 +17,7 @@
 package com.meadowhawk.cah;
 
 import com.google.cast.MessageStream;
+import com.meadowhawk.cah.model.Card;
 
 import android.util.Log;
 
@@ -34,7 +35,7 @@ import java.util.List;
 public abstract class GameMessageStream extends MessageStream {
     private static final String TAG = GameMessageStream.class.getSimpleName();
 
-    private static final String GAME_NAMESPACE = "com.google.chromecast.demo.tictactoe";
+    private static final String GAME_NAMESPACE = "com.meadowhawk.chromecast.cah";
 
     public static final String END_STATE_X_WON = "X-won";
     public static final String END_STATE_O_WON = "O-won";
@@ -50,7 +51,17 @@ public abstract class GameMessageStream extends MessageStream {
      *
      */
     public enum SEND_MESSAGES {
-    	JOIN,DROPOUT,CARD_REQUEST,PLAY_CARDS;
+    	JOIN("join"),DROPOUT("leave"),CARD_REQUEST("req-card"),PLAY_CARDS("play-card");
+    	
+    	private String jsValue;
+
+		SEND_MESSAGES(String value){
+    		this.jsValue = value;
+    	}
+		
+		public String getJSValue(){
+			return this.jsValue;
+		}
     }
     
     // Receivable event types
@@ -82,10 +93,6 @@ public abstract class GameMessageStream extends MessageStream {
     
 //    private static final String KEY_BOARD_LAYOUT_RESPONSE = "board_layout_response";
     private static final String KEY_EVENT = "event";
-//    private static final String KEY_JOINED = "joined";
-//    private static final String KEY_MOVED = "moved";
-//    private static final String KEY_ENDGAME = "endgame";
-//    private static final String KEY_ERROR = "error";
 
     // Commands
     private static final String KEY_COMMAND = "command";
@@ -97,6 +104,8 @@ public abstract class GameMessageStream extends MessageStream {
     private static final String KEY_PLAYER = "player";
 
 	private static final String STATUS_TYPE = "status_type";
+
+	private static final String KEY_CARD_COUNT = "cardsInHand";
 
     /**
      * Constructs a new GameMessageStream with GAME_NAMESPACE as the namespace used by 
@@ -150,7 +159,7 @@ public abstract class GameMessageStream extends MessageStream {
         	//TODO: update to send proper message
             Log.d(TAG, "join: " + name);
             JSONObject payload = new JSONObject();
-            payload.put(KEY_COMMAND, SEND_MESSAGES.JOIN.toString());
+            payload.put(KEY_COMMAND, SEND_MESSAGES.JOIN.getJSValue());
             payload.put(KEY_NAME, name);
             sendMessage(payload);
         } catch (JSONException e) {
@@ -162,14 +171,14 @@ public abstract class GameMessageStream extends MessageStream {
         }
     }
 
-	public final void submitCards(List<Object> cards){
+	public final void submitCards(List<Long> cardIds){
 		//TODO: update to send proper message
 		try {
         	//TODO: update to send proper message
-            Log.d(TAG, "submitCards: " + cards.size());
+            Log.d(TAG, "submitCards: " + cardIds);
             JSONObject payload = new JSONObject();
-            payload.put(KEY_COMMAND, SEND_MESSAGES.PLAY_CARDS.toString());
-            payload.put(KEY_CARDS, cards);
+            payload.put(KEY_COMMAND, SEND_MESSAGES.PLAY_CARDS.getJSValue());
+            payload.put(KEY_CARDS, cardIds);
             sendMessage(payload);
         } catch (JSONException e) {
             Log.e(TAG, "Cannot create object to submit cards", e);
@@ -180,13 +189,17 @@ public abstract class GameMessageStream extends MessageStream {
         }
 	}
 	
-	public final void playNextHand(){
-		//perhaps submitCards will just request more cards to make  simpler UI?
+	/**
+	 * Bring hand up to max card count, Find out who Card Czar is and GET Black card for reference.
+	 */
+	public final void playNextHand(int cardsInHand){
+		//TODO: Need to find out what the Next Black card is
 		try {
         	//TODO: update to send proper message
             Log.d(TAG, "requestCards");
             JSONObject payload = new JSONObject();
-            payload.put(KEY_COMMAND, SEND_MESSAGES.CARD_REQUEST.toString());
+            payload.put(KEY_COMMAND, SEND_MESSAGES.CARD_REQUEST.getJSValue());
+            payload.put(KEY_CARD_COUNT,cardsInHand);
             sendMessage(payload);
         } catch (JSONException e) {
             Log.e(TAG, "Cannot create object to request cards", e);
@@ -204,7 +217,7 @@ public abstract class GameMessageStream extends MessageStream {
         try {
             Log.d(TAG, "leave");
             JSONObject payload = new JSONObject();
-            payload.put(KEY_COMMAND, SEND_MESSAGES.DROPOUT.toString());
+            payload.put(KEY_COMMAND, SEND_MESSAGES.DROPOUT.getJSValue());
             payload.put(KEY_NAME, name);
             sendMessage(payload);
         } catch (JSONException e) {
