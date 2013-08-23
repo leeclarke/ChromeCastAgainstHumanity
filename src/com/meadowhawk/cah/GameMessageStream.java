@@ -19,6 +19,7 @@ package com.meadowhawk.cah;
 import com.google.cast.MessageStream;
 import com.meadowhawk.cah.model.Card;
 
+import android.annotation.SuppressLint;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -33,7 +34,9 @@ import java.util.List;
  * during a TicTacToe game.
  */
 public abstract class GameMessageStream extends MessageStream {
-    private static final String TAG = GameMessageStream.class.getSimpleName();
+    private static final String PLAYER_NAME = "playerName";
+
+	private static final String TAG = GameMessageStream.class.getSimpleName();
 
     private static final String GAME_NAMESPACE = "com.meadowhawk.chromecast.cah";
 
@@ -66,11 +69,12 @@ public abstract class GameMessageStream extends MessageStream {
     
     // Receivable event types
     public enum RECIEVE_MESSAGES {
-    	PLAYER_JOIN, PLAYER_DROP, ERROR, GAME_STATUS_UPDATE, CARD_PLAYED, GOT_CARDS;
+    	JOINED, PLAYER_DROP, ERROR, GAME_STATUS_UPDATE, CARD_PLAYED, GOT_CARDS;
 
+		@SuppressLint("DefaultLocale")
 		public static RECIEVE_MESSAGES getByString(String msg) {
 			for (RECIEVE_MESSAGES recvMesg : RECIEVE_MESSAGES.values()) {
-				if(recvMesg.name().equalsIgnoreCase(msg)){
+				if(recvMesg.name().equalsIgnoreCase(msg.toUpperCase())){
 					return recvMesg;
 				}
 			}
@@ -100,8 +104,7 @@ public abstract class GameMessageStream extends MessageStream {
     private static final String KEY_MESSAGE = "message";
     private static final String KEY_NAME = "name";
     private static final String KEY_CARDS = "cards";
-    private static final String KEY_OPPONENT = "opponent";
-    private static final String KEY_PLAYER = "player";
+    private static final String KEY_PLAYER = PLAYER_NAME;
 
 	private static final String STATUS_TYPE = "status_type";
 
@@ -118,17 +121,17 @@ public abstract class GameMessageStream extends MessageStream {
     /**
      * Performs some action upon a player joining the game.
      * 
-     * @param playerSymbol either X or O
-     * @param opponentName the name of the player who just joined an existing game, or the opponent
+     * @param playerName
      */
-    protected abstract void onGameJoined(String playerSymbol, String opponentName);
+    protected abstract void onGameJoined(String playerName);
 
     /**
      * Adds new cards to players Hand.
-     * 
+     * @param imCzar 
      * @param list of cards.
+     * @param current black card in play
      */
-    protected abstract void onGotCards(JSONArray cards);
+    protected abstract void onGotCards(boolean imCzar, JSONArray cards, JSONObject jsonObject);
 
     /**
      * Performs some action upon a game error.
@@ -143,6 +146,9 @@ public abstract class GameMessageStream extends MessageStream {
      */
     protected abstract void onGameStatusUpdate(STATUS_UPDATE newStatus) ;
 
+    protected abstract void onCardsPlayed(String[] strings) ;
+    
+    
     /**
      * 
      * @param player
@@ -171,7 +177,7 @@ public abstract class GameMessageStream extends MessageStream {
         }
     }
 
-	public final void submitCards(List<Long> cardIds){
+	public final void submitCards(List<Long> cardIds,String playerName){
 		//TODO: update to send proper message
 		try {
         	//TODO: update to send proper message
@@ -179,6 +185,7 @@ public abstract class GameMessageStream extends MessageStream {
             JSONObject payload = new JSONObject();
             payload.put(KEY_COMMAND, SEND_MESSAGES.PLAY_CARDS.getJSValue());
             payload.put(KEY_CARDS, cardIds);
+            payload.put(PLAYER_NAME,playerName);
             sendMessage(payload);
         } catch (JSONException e) {
             Log.e(TAG, "Cannot create object to submit cards", e);
@@ -193,7 +200,6 @@ public abstract class GameMessageStream extends MessageStream {
 	 * Bring hand up to max card count, Find out who Card Czar is and GET Black card for reference.
 	 */
 	public final void playNextHand(int cardsInHand){
-		//TODO: Need to find out what the Next Black card is
 		try {
         	//TODO: update to send proper message
             Log.d(TAG, "requestCards");
@@ -243,19 +249,18 @@ public abstract class GameMessageStream extends MessageStream {
                 RECIEVE_MESSAGES msgRecieved = RECIEVE_MESSAGES.getByString(message.getString(KEY_EVENT));
             
 				switch (msgRecieved) {
-				case PLAYER_JOIN:
-					Log.d(TAG, "JOINED");
+				case JOINED:
+					Log.d(TAG, RECIEVE_MESSAGES.JOINED.toString());
                     try {
                         String player = message.getString(KEY_PLAYER);
-                        String opponentName = message.getString(KEY_OPPONENT);
-                        onGameJoined(player, opponentName);
+                        onGameJoined(player);
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
 					break;
 					
 				case PLAYER_DROP:
-					Log.d(TAG, "DROP");
+					Log.d(TAG, RECIEVE_MESSAGES.PLAYER_DROP.toString());
                     try {
                         String player = message.getString(KEY_PLAYER);
                         //notify if a play drops the game.
@@ -265,7 +270,7 @@ public abstract class GameMessageStream extends MessageStream {
                     }
                     
 				case GAME_STATUS_UPDATE:   
-					Log.d(TAG, "STATUS");
+					Log.d(TAG, RECIEVE_MESSAGES.GAME_STATUS_UPDATE.toString());
                     try {
                         String status = message.getString(STATUS_TYPE); //
                         STATUS_UPDATE newStatus = STATUS_UPDATE.getByString(status);
@@ -273,28 +278,44 @@ public abstract class GameMessageStream extends MessageStream {
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
+                    break;
                     
 				case CARD_PLAYED:
-					Log.d(TAG, "CARD_PLAYED");
-					
-				case GOT_CARDS:
-					Log.d(TAG, "GOT_CARDS");
+					Log.d(TAG, RECIEVE_MESSAGES.CARD_PLAYED.toString());
+					//Looking for an ACK so can clean out cards played from the hand. Should contain the ids of cards played to they can be removed.
 					try{
-					    JSONArray cards = message.getJSONArray("cards");
-						onGotCards(cards);
+						String cardIds = (message.has("cards"))?message.getString("cards"):null;
+						//TODO: Strip off the [ ] s
+						cardIds = cardIds.replace("[", "").replace("]", "");
+						
+						onCardsPlayed(cardIds.split(","));
 					}catch (JSONException e) {
                         e.printStackTrace();
                     }
+					break;
+					
+				case GOT_CARDS:
+					Log.d(TAG, RECIEVE_MESSAGES.GOT_CARDS.toString());
+					try{
+					    JSONArray cards = message.getJSONArray("newCards");
+					    boolean imCzar = message.getBoolean("imCzar");
+					    JSONObject blkCardObj = (message.has("blackCardInPlay"))?message.getJSONObject("blackCardInPlay"):null;
+						onGotCards(imCzar, cards, blkCardObj);
+					}catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+					break;
 					
 				case ERROR:  
 					
 				default:
-					Log.d(TAG, "ERROR");
+					Log.d(TAG, RECIEVE_MESSAGES.ERROR.toString());
                     try {
                         String errorMessage = message.getString(KEY_MESSAGE);
                         onGameError(errorMessage);
                     } catch (JSONException e) {
                         e.printStackTrace();
+                        Log.i(TAG, "Recieved message: "+message.toString());
                     }
 					break;
 				}

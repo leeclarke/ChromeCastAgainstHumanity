@@ -32,7 +32,7 @@ public class Card {
 	}
 	
 	public Card(JSONObject json) throws JSONException{
-		this.id = json.getLong("cardId");
+		this.id = json.getLong("id");
 		this.content = json.getString("content");
 		this.type = CardType.getByString(json.getString("type"));
 		if(json.has("pickCt"))
@@ -95,6 +95,16 @@ public class Card {
 	
 	public void setSubmit(boolean submit){
 		this.submitCard = submit;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if(o instanceof Card){
+			if(((Card)o).getId() == this.id){
+				return true;
+			}
+		}
+		return false;
 	}
 }
 

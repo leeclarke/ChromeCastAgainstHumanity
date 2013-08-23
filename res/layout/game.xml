@@ -82,6 +82,7 @@
             android:layout_height="wrap_content"
             android:text="@string/get_cards" 
             style="?android:attr/buttonBarButtonStyle"
+            android:enabled="false"
             android:drawableLeft="@drawable/cards"
             />
 		<Button
@@ -90,13 +91,15 @@
             android:layout_height="wrap_content"
             android:text="@string/submit_card"
             style="?android:attr/buttonBarButtonStyle"
+            android:enabled="false"
             android:drawableLeft="@drawable/arrow_up" />
 		<ImageButton
             android:id="@+id/back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/back"
-            style="?android:attr/buttonBarButtonStyle" 
+            style="?android:attr/buttonBarButtonStyle"
+            android:enabled="false" 
             android:contentDescription="@string/btn_content_back"/>
         <ImageButton
             android:id="@+id/next"
@@ -105,7 +108,7 @@
             android:layout_marginBottom="10dip"
             android:enabled="true"
             android:src="@drawable/next"
-            style="?android:attr/buttonBarButtonStyle" 
+            style="?android:attr/buttonBarButtonStyle"
             android:contentDescription="@string/btn_content_next" />
         
         

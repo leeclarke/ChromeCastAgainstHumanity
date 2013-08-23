@@ -2,6 +2,7 @@ package com.meadowhawk.cah;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -16,10 +17,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -60,14 +62,17 @@ public class GameActivity extends Activity {
 	
 	String playerName = PLAYER1;
 	int awesomePoints = 0;
-	List<Card> cards = new ArrayList<Card>();
-	List<Long> submitCards = new ArrayList<Long>();
+	List<Card> cards = Collections.synchronizedList(new ArrayList<Card>());
+	List<Long> submitCards = Collections.synchronizedList(new ArrayList<Long>());
 	protected int currentCard = 0;
 	
 	private TextView cardView;
 	private TextView awesomePointsView;
 	private ImageView selectedCardImg;
 	private LinearLayout cardLayout;
+	public boolean isCzar;
+	public Card blackCardInPlay;
+	private TextView pickCt;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +89,9 @@ public class GameActivity extends Activity {
 		setUpCardLayout();
 		
 		this.selectedCardImg = (ImageView) findViewById(R.id.imageStar);
+		
+		this.pickCt = ((TextView)findViewById(R.id.cardPick));
+		this.pickCt.setText(this.pickCt.getText()+ "1");
 	}
 
 	@Override
@@ -99,12 +107,8 @@ public class GameActivity extends Activity {
 		
 		checkPlayerName();
         
-		//Consider moving this to the OnJoin
-		makeShortToast("Welcome to the game, ");
-		
 		awesomePointsView.setText(awesomePoints+"");
 		
-		//TODO: The GameActvity fails to render the view.  What happened?  This happens even if the below code is commented.
         CastDevice selectedDevice = CastCAHApplication.getInstance().getDevice();
         CastContext castContext = CastCAHApplication.getInstance().getCastContext();
 
@@ -192,7 +196,8 @@ public class GameActivity extends Activity {
 			JSONArray cardArray = new JSONArray("[{\"content\": \"Darth Vader.\", \"type\": \"W\", \"cardId\":1}," +
 					"{\"content\": \"Women.\",\"type\": \"W\", \"cardId\":2}," +
 					"{\"content\": \"World of Warcraft.\",\"type\": \"W\", \"cardId\":3}]");
-			cahMessageStream.onGotCards(cardArray);
+			JSONObject blkCard = new JSONObject("{\"content\": \"Thats right I killed _____.  How, you ask? ____\",\"type\": \"B\",\"pickCt\": 2,\"draw\": 1}");
+			cahMessageStream.onGotCards(false, cardArray, blkCard );
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -251,10 +256,13 @@ public class GameActivity extends Activity {
         findViewById(R.id.getCards).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-            	loadTestData();
-            	updateCardView(); //TODO: remove testing call
-            	cahMessageStream.playNextHand(cards.size());
-            	makeShortToast("Recieved  "+ (cards.size() - currentCard)+ " new cards.");
+            	//loadTestData();
+            	//updateCardView(); //TODO: remove testing call
+            	try{
+            		cahMessageStream.playNextHand(cards.size());
+            	} catch(Exception e){
+            		Log.e(TAG, "Soemthing went wrong when making the call. "+ e);
+            	}
             }
         });
 
@@ -274,7 +282,7 @@ public class GameActivity extends Activity {
             	if(submitCards.size()<1){
             		makeShortToast("You need to tap a card to mark it to be played.");
             	}
-				cahMessageStream.submitCards(submitCards);
+				cahMessageStream.submitCards(submitCards, playerName);
 				//Clear cards for now. w/o waiting on an ACK
 				
 				submitCards.clear();
@@ -360,12 +368,23 @@ public class GameActivity extends Activity {
         @Override
         public void onSessionStartFailed(SessionError error) {
             Log.d(TAG, "start session failed: " + error.toString());
+            Log.d(TAG, "Session Resumable: " + mSession.isResumable());
+            //TODO:  Try to reestablish session when there is an error
         }
 
         @Override
         public void onSessionEnded(SessionError error) {
             Log.d(TAG, "session ended: " + ((error == null) ? "OK" : error.toString()));
+            Log.d(TAG, "Session Resumable: " + mSession.isResumable());
         }
+    }
+    
+    private void updateBlackCard(Card newBlackCard){
+    	if(newBlackCard != null){
+    		blackCardInPlay = newBlackCard;
+    		//Update info on the UI.
+    		this.pickCt.setText(getResources().getString(R.string.cardPickDefault) + ((blackCardInPlay != null)?blackCardInPlay.getPickCt():1));
+    	}
     }
     
 	/**
@@ -374,19 +393,38 @@ public class GameActivity extends Activity {
 	private class CAHMessageStream extends GameMessageStream{
 
 		@Override
-		protected void onGameJoined(String playerSymbol, String opponentName) {
-			// TODO Auto-generated method stub
-			
+		protected void onGameJoined(String playerName) {
+			Log.i(TAG, "Game joined");
+			((Button)findViewById(R.id.getCards)).setEnabled(true);
+			makeShortToast("Welcome to the game, " + playerName);
 		}
 
 		@Override
-		protected void onGotCards(JSONArray jsoncards) {
+		protected void onGotCards(boolean imCzar, JSONArray jsoncards, JSONObject blackCard) {
+			Log.i(TAG, "onGotCards");
 			try{
 				for (int i = 0; i < jsoncards.length(); i++) {
 					JSONObject cardJson = (JSONObject) jsoncards.get(i);
 					cards.add(new Card(cardJson));
 				}
 				updateCardView();
+				makeShortToast("Recieved  "+ (jsoncards.length())+ " new cards.");
+				isCzar = imCzar;
+				if(isCzar){
+					//update UI/launch Czar Activity.
+					
+					//Make toast for now for testing
+					makeShortToast("Your'e the Card Czar! All hail the Czar!");
+				}
+				
+				if(blackCard != null){
+					updateBlackCard(new Card(blackCard));
+				}
+				//toggle on buttons.
+				((Button)findViewById(R.id.getCards)).setEnabled(false);
+				((Button)findViewById(R.id.submit)).setEnabled(true);
+				((ImageButton)findViewById(R.id.back)).setEnabled(true);
+				((ImageButton)findViewById(R.id.next)).setEnabled(true);
 			} catch(JSONException je){
 				Log.w(TAG, "problem parsing server response for cards: "+je.getMessage());
 			}
@@ -394,20 +432,45 @@ public class GameActivity extends Activity {
 
 		@Override
 		protected void onGameError(String errorMessage) {
-			// TODO Auto-generated method stub
-			
+			Log.e(TAG, errorMessage);	
+			makeShortToast("Something went wrong on the server: " + errorMessage);
 		}
 
 		@Override
 		protected void onGameStatusUpdate(STATUS_UPDATE newStatus) {
-			// TODO Auto-generated method stub
-			
+			// TODO Need to check for waiting|playing modes. should go to waiting while the submitted cards are reviewed by Czar.
+			if(STATUS_UPDATE.NEXT_ROUND_START == newStatus){
+				//enable get cards.
+				((Button)findViewById(R.id.getCards)).setEnabled(true);
+			}
 		}
 
 		@Override
 		protected void onPlayerDrop(String player) {
-			// TODO Auto-generated method stub
 			
+		}
+
+		@Override
+		protected void onCardsPlayed(String[] cardIds) {
+			for (int i = 0; i < cardIds.length; i++) {
+				long id = -1L;
+				id = Long.parseLong(cardIds[i]);
+				//remove played cards from hand
+				Card rmCard = null;
+				for (Card card : cards	) {
+					if(card.getId() == id){
+						rmCard = card;
+						break;
+					}
+				}
+				
+				if(rmCard != null){
+					cards.remove(rmCard);
+					updateCurrentCard(MOVE_CARD.START);
+					((Button)findViewById(R.id.submit)).setEnabled(false);
+					makeShortToast("Card[s] submitted!");
+				}
+			}
 		}
 		
 	}

@@ -32,7 +32,7 @@
     <string name="btn_content_next">Next</string>
     <string name="btn_content_back">Back</string>
     <string name="card_dir">Tap the Get Cards button to get your hand.</string>
-    <string name="cardPickDefault">pick: 1</string>
+    <string name="cardPickDefault">pick: </string>
     <string name="star_selected">Star - Selected</string>
 
 </resources>
