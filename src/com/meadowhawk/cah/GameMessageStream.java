@@ -83,7 +83,7 @@ public abstract class GameMessageStream extends MessageStream {
     }
 
     public enum STATUS_UPDATE{
-    	END_GAME, NEXT_ROUND_START, GOT_AWESOME,NONE;
+    	CARD_CZAR_REVIEW, END_GAME, NEXT_ROUND_START, GOT_AWESOME,NONE;
 
 		public static STATUS_UPDATE getByString(String status) {
 			for (STATUS_UPDATE statUpdate : STATUS_UPDATE.values()) {

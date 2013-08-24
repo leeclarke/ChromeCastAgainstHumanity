@@ -13,6 +13,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -206,20 +207,35 @@ public class GameActivity extends Activity {
 	}
 
 	/**
-	 * Do what needs doing to update the CardView
+	 * Do what needs doing to update the CardView, switch up view if user is/is not CardCzar
 	 */
 	private void updateCardView(){
-		
-		//Update card with currentCard Data.
-		if(!cards.isEmpty()){
-			Card card = cards.get(currentCard);
-			this.cardView.setText(card.getContent());
-			selectedCardImg.setVisibility((card.isSubmit())?View.VISIBLE:View.INVISIBLE);
-		} else {
-			makeShortToast("You don't have any cards yet.");
+		if(isCzar){
+			///ref  mTextView.setBackgroundResource(R.drawable.myResouce);
+			updateCzarUI();
+			makeShortToast("Your'e the Card Czar! All hail the Czar!");
+		} else{
+			///ref  mTextView.setBackgroundResource(R.drawable.myResouce);
+			this.cardView.setTextColor(Color.BLACK);
+			this.pickCt.setTextColor(Color.BLACK);
+			
+			//Update card with currentCard Data.
+			if(!cards.isEmpty()){
+				Card card = cards.get(currentCard);
+				this.cardView.setText(card.getContent());
+				selectedCardImg.setVisibility((card.isSubmit())?View.VISIBLE:View.INVISIBLE);
+				updatePickDraw();
+				//toggle on buttons.
+				((Button)findViewById(R.id.getCards)).setEnabled(false);
+				((Button)findViewById(R.id.submit)).setEnabled(true);
+				((ImageButton)findViewById(R.id.back)).setEnabled(true);
+				((ImageButton)findViewById(R.id.next)).setEnabled(true);
+			} else {
+				makeShortToast("You don't have any cards yet.");
+			}
 		}
-		//TODO Check to see if CardCzar and switch to that card
-		///ref  mTextView.setBackgroundResource(R.drawable.myResouce);
+		
+		
 	}
 	
 	/**
@@ -347,7 +363,7 @@ public class GameActivity extends Activity {
 		}
 		
 	}
-
+	
 	/**
      * A class which listens to session start events. On detection, it attaches the game's message
      * stream and joins a player to the game.
@@ -355,7 +371,6 @@ public class GameActivity extends Activity {
     private class SessionListener implements ApplicationSession.Listener {
         @Override
         public void onSessionStarted(ApplicationMetadata appMetadata) {
-            //TODO: mInfoView.setText(R.string.waiting_for_player_assignment);
             ApplicationChannel channel = mSession.getChannel();
             if (channel == null) {
                 Log.w(TAG, "onStarted: channel is null");
@@ -375,17 +390,57 @@ public class GameActivity extends Activity {
         @Override
         public void onSessionEnded(SessionError error) {
             Log.d(TAG, "session ended: " + ((error == null) ? "OK" : error.toString()));
-            Log.d(TAG, "Session Resumable: " + mSession.isResumable());
         }
     }
     
-    private void updateBlackCard(Card newBlackCard){
-    	if(newBlackCard != null){
-    		blackCardInPlay = newBlackCard;
+    /**
+     * Update the Card display to black and disable unrelated UI components.
+     * @param newBlackCard
+     */
+    private void updateCzarUI(){
+    	if(blackCardInPlay != null){
+    		this.cardView.setTextColor(Color.WHITE);
+    		this.cardView.setText(this.blackCardInPlay.getContent());
+    		this.pickCt.setTextColor(Color.WHITE);
+    		this.pickCt.setText(getResources().getString(R.string.cardPickDefault) + ((blackCardInPlay != null)?blackCardInPlay.getPickCt():1));
+    		
+    		if(isCzar){
+	    		((Button)findViewById(R.id.getCards)).setEnabled(false);
+				((Button)findViewById(R.id.submit)).setEnabled(false);
+				((ImageButton)findViewById(R.id.back)).setEnabled(false);
+				((ImageButton)findViewById(R.id.next)).setEnabled(false);
+			}
+    		updatePickDraw();
+    	}
+    }
+    
+    private void updatePickDraw(){
+    	if(blackCardInPlay != null){
     		//Update info on the UI.
     		this.pickCt.setText(getResources().getString(R.string.cardPickDefault) + ((blackCardInPlay != null)?blackCardInPlay.getPickCt():1));
     	}
     }
+    
+
+	/**
+	 * Pops up a dialog for Card Czar to control the cats screen for reviewing the submitted cards, and to pick a winner.
+	 */
+	private void displayCardCzarDialog(){
+		Log.i(TAG, "*** displayCardCzarDialog");
+		//This cane be done either with a simple doalog box display or by launching another activity.
+		
+		/*reqs:  
+		 * 1. Dialog Needs to open when notified that its card review time. 
+		 * 2. Czar must control cast screen to review cards
+		 * 3. Czar needs to select wa winner.
+		 * 4. close dialog to initiate new Czar being picked.
+		 * 
+		 * DONE - Assumption:  The Black card will get displayed in the same way as the other cards.
+		 *    disable buttons on hand options since player is czar.
+		 *    
+		 */
+		
+	}
     
 	/**
 	 * Manages Messages sent/received from server.
@@ -407,24 +462,13 @@ public class GameActivity extends Activity {
 					JSONObject cardJson = (JSONObject) jsoncards.get(i);
 					cards.add(new Card(cardJson));
 				}
+				
+				blackCardInPlay = new Card(blackCard);
+				isCzar = true; //TODO: remove Debug setting once server response correctly.  imCzar;
+				
 				updateCardView();
 				makeShortToast("Recieved  "+ (jsoncards.length())+ " new cards.");
-				isCzar = imCzar;
-				if(isCzar){
-					//update UI/launch Czar Activity.
-					
-					//Make toast for now for testing
-					makeShortToast("Your'e the Card Czar! All hail the Czar!");
-				}
 				
-				if(blackCard != null){
-					updateBlackCard(new Card(blackCard));
-				}
-				//toggle on buttons.
-				((Button)findViewById(R.id.getCards)).setEnabled(false);
-				((Button)findViewById(R.id.submit)).setEnabled(true);
-				((ImageButton)findViewById(R.id.back)).setEnabled(true);
-				((ImageButton)findViewById(R.id.next)).setEnabled(true);
 			} catch(JSONException je){
 				Log.w(TAG, "problem parsing server response for cards: "+je.getMessage());
 			}
@@ -439,9 +483,17 @@ public class GameActivity extends Activity {
 		@Override
 		protected void onGameStatusUpdate(STATUS_UPDATE newStatus) {
 			// TODO Need to check for waiting|playing modes. should go to waiting while the submitted cards are reviewed by Czar.
-			if(STATUS_UPDATE.NEXT_ROUND_START == newStatus){
-				//enable get cards.
+			switch (newStatus) {
+			case NEXT_ROUND_START:
 				((Button)findViewById(R.id.getCards)).setEnabled(true);
+				break;
+			
+			case CARD_CZAR_REVIEW:
+				displayCardCzarDialog();
+				break;
+
+			default:
+				break;
 			}
 		}
 
