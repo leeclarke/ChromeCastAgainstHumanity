@@ -211,11 +211,10 @@ public class GameActivity extends Activity {
 	 */
 	private void updateCardView(){
 		if(isCzar){
-			///ref  mTextView.setBackgroundResource(R.drawable.myResouce);
 			updateCzarUI();
 			makeShortToast("Your'e the Card Czar! All hail the Czar!");
 		} else{
-			///ref  mTextView.setBackgroundResource(R.drawable.myResouce);
+			this.cardView.setBackgroundResource(R.drawable.card_w_bg);
 			this.cardView.setTextColor(Color.BLACK);
 			this.pickCt.setTextColor(Color.BLACK);
 			
@@ -399,6 +398,7 @@ public class GameActivity extends Activity {
      */
     private void updateCzarUI(){
     	if(blackCardInPlay != null){
+    		this.cardView.setBackgroundResource(R.drawable.card_b_bg);
     		this.cardView.setTextColor(Color.WHITE);
     		this.cardView.setText(this.blackCardInPlay.getContent());
     		this.pickCt.setTextColor(Color.WHITE);
